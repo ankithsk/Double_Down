@@ -1,0 +1,8 @@
+import { io } from 'socket.io-client';
+
+const socket = io('/', {
+  autoConnect: false,
+  auth: {},
+});
+
+export default socket;
