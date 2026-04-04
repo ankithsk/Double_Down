@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import socket from '../socket';
 import useGameStore from '../store/gameStore';
@@ -15,10 +15,9 @@ import {
   PartnerResponseButtons,
 } from '../components/ActionButtons';
 
-function RevealOverlay({ reveal, onDismiss }) {
+function RevealOverlay({ reveal, onDismiss, myPairId, pairs, players }) {
   useEffect(() => {
     if (!reveal) return;
-    // Sound + haptic feedback
     if (reveal.drinks > 0) { sounds.wrong(); haptics.error(); }
     else { sounds.correct(); haptics.success(); }
     const t = setTimeout(onDismiss, 2500);
@@ -27,6 +26,14 @@ function RevealOverlay({ reveal, onDismiss }) {
 
   if (!reveal) return null;
   const drank = reveal.drinks > 0;
+  const isMyPair = reveal.pairId === myPairId;
+
+  // Build name label — "YOU" for your pair, first names for others
+  const pairPlayerIds = pairs[reveal.pairId]?.playerIds || [];
+  const pairNames = pairPlayerIds.map(id => players[id]?.name || '?');
+  const nameLabel = isMyPair
+    ? (pairNames.length === 1 ? pairNames[0].toUpperCase() : 'YOU')
+    : pairNames.map(n => n.split(' ')[0]).join(' & ').toUpperCase();
 
   return (
     <motion.div
@@ -56,7 +63,7 @@ function RevealOverlay({ reveal, onDismiss }) {
           initial={{ scale: 0.5, rotate: -10 }}
           animate={{ scale: 1, rotate: 0 }}
           transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-          style={{ marginBottom: 32 }}
+          style={{ marginBottom: 28 }}
         >
           <Card suit={reveal.card.suit} value={reveal.card.value} faceUp size="lg" />
         </motion.div>
@@ -69,7 +76,16 @@ function RevealOverlay({ reveal, onDismiss }) {
           transition={{ type: 'spring', stiffness: 400, damping: 18, delay: 0.1 }}
           style={{ textAlign: 'center' }}
         >
-          <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--accent-hot)', marginBottom: 8 }}>
+          <div style={{
+            fontSize: nameLabel.length > 10 ? 20 : 24,
+            fontWeight: 900, letterSpacing: 2,
+            textTransform: 'uppercase',
+            color: isMyPair ? '#fff' : 'rgba(255,255,255,0.7)',
+            marginBottom: 4,
+          }}>
+            {nameLabel}
+          </div>
+          <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--accent-hot)', marginBottom: 8 }}>
             TAKE
           </div>
           <div style={{
@@ -97,7 +113,14 @@ function RevealOverlay({ reveal, onDismiss }) {
         >
           <div style={{ fontSize: 80, marginBottom: 8 }}>✅</div>
           <div style={{
-            fontSize: 56, fontWeight: 900,
+            fontSize: nameLabel.length > 10 ? 22 : 28,
+            fontWeight: 900, letterSpacing: 1,
+            color: 'rgba(255,255,255,0.7)', marginBottom: 8,
+          }}>
+            {nameLabel}
+          </div>
+          <div style={{
+            fontSize: 52, fontWeight: 900,
             color: 'var(--accent-green)',
             textShadow: '0 0 40px rgba(107,255,184,0.6)',
           }}>
@@ -200,10 +223,12 @@ export default function Game() {
     if (phase === 'ROUND_1' && rs.waitingFor === 'bothGuess') {
       const isA = mySocketId === myPair.playerIds[0];
       const myGuess = isA ? rs.guessA : rs.guessB;
-      if (myGuess) return 'Waiting for partner to guess…';
+      const partnerName = players[isA ? myPair.playerIds[1] : myPair.playerIds[0]]?.name || 'Partner';
+      if (myGuess) return `Waiting for ${partnerName} to guess…`;
     }
     if (rs.waitingFor === 'partnerResponse' && mySocketId === rs.guessBy && gameMode !== 'solo_individual') {
-      return 'Waiting for partner response…';
+      const partnerName = players[rs.partnerOf]?.name || 'Partner';
+      return `Waiting for ${partnerName} to respond…`;
     }
     if (rs.waitingFor === 'guess' && mySocketId !== rs.guessBy && gameMode !== 'solo_individual') {
       return `${players[rs.guessBy]?.name || 'Partner'} is guessing…`;
@@ -240,6 +265,31 @@ export default function Game() {
 
       {/* Action area — fixed bottom */}
       <div style={{ padding: '0 16px 16px' }}>
+
+        {/* YOUR TURN banner */}
+        {myTurn && !allResolved && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{
+              textAlign: 'center',
+              marginBottom: 12,
+            }}
+          >
+            <span style={{
+              display: 'inline-block',
+              fontSize: 11, fontWeight: 800, letterSpacing: 3,
+              textTransform: 'uppercase', color: '#0a0510',
+              background: myTurn === 'partnerResponse'
+                ? 'var(--accent-gold)'
+                : 'linear-gradient(135deg, #6b6bff, #ff6bcc)',
+              borderRadius: 8, padding: '5px 14px',
+            }}>
+              {myTurn === 'partnerResponse' ? '⚡ Your move — support or bail?' : '👇 Your turn'}
+            </span>
+          </motion.div>
+        )}
+
         {myTurn === 'r1' && (
           <R1Buttons onGuess={handleR1Guess} disabled={false} />
         )}
@@ -253,8 +303,19 @@ export default function Game() {
           <R4Buttons onGuess={handleGuess} disabled={false} />
         )}
         {myTurn === 'partnerResponse' && gameMode !== 'solo_individual' && (
-          <PartnerResponseButtons onResponse={handlePartnerResponse} disabled={false} />
+          <>
+            {myPair?.roundState?.guess && (
+              <div style={{ textAlign: 'center', marginBottom: 10, fontSize: 13, color: 'var(--text-muted)' }}>
+                {players[myPair.roundState.guessBy]?.name?.split(' ')[0] || 'Partner'} guessed{' '}
+                <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>
+                  {myPair.roundState.guess.toUpperCase()}
+                </span>
+              </div>
+            )}
+            <PartnerResponseButtons onResponse={handlePartnerResponse} disabled={false} />
+          </>
         )}
+
         {!myTurn && waitingMsg && (
           <div style={{
             textAlign: 'center',
@@ -265,6 +326,7 @@ export default function Game() {
             {waitingMsg}
           </div>
         )}
+
         {isHost && allResolved && (
           <button
             onClick={handleNextRound}
@@ -296,7 +358,13 @@ export default function Game() {
       {/* Reveal overlay */}
       <AnimatePresence>
         {showReveal && (
-          <RevealOverlay reveal={showReveal} onDismiss={dismissReveal} />
+          <RevealOverlay
+            reveal={showReveal}
+            onDismiss={dismissReveal}
+            myPairId={myPairId}
+            pairs={pairs}
+            players={players}
+          />
         )}
       </AnimatePresence>
     </div>

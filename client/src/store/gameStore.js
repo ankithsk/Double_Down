@@ -14,6 +14,7 @@ const useGameStore = create((set, get) => ({
   busFinalResult: null,
   activeSideQuest: null,   // { type, contentIndex, pairId, drinksAtStake }
   sideQuestVotes: {},      // { [playerId]: 'yes' | 'no' }
+  sideQuestPhase: 'reveal', // 'reveal' | 'active'
 
   setRoomCode: (code) => set({ roomCode: code }),
   setMySocketId: (id) => set({ mySocketId: id }),
@@ -32,8 +33,11 @@ const useGameStore = create((set, get) => ({
   setLastReveal: (reveal) => set({ lastReveal: reveal }),
   setLastBusCard: (card) => set({ lastBusCard: card }),
   setBusFinalResult: (result) => set({ busFinalResult: result }),
-  setSideQuest: (sq) => set({ activeSideQuest: sq, sideQuestVotes: {} }),
-  clearSideQuest: () => set({ activeSideQuest: null, sideQuestVotes: {} }),
+  setSideQuest: (sq) => set({ activeSideQuest: sq, sideQuestVotes: {}, sideQuestPhase: 'reveal', sideQuestResult: null }),
+  clearSideQuest: () => set({ activeSideQuest: null, sideQuestVotes: {}, sideQuestPhase: 'reveal', sideQuestResult: null }),
+  setSideQuestPhase: (phase) => set({ sideQuestPhase: phase }),
+  resolveSideQuest: (won, drinksAtStake) => set({ sideQuestPhase: 'result', sideQuestResult: { won, drinksAtStake } }),
+  sideQuestResult: null,
   addSideQuestVote: (playerId, vote) => set(s => ({
     sideQuestVotes: { ...s.sideQuestVotes, [playerId]: vote },
   })),

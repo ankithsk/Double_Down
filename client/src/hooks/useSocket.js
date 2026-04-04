@@ -14,6 +14,7 @@ export default function useSocket() {
     setSideQuest,
     clearSideQuest,
     addSideQuestVote,
+    setSideQuestPhase,
   } = useGameStore();
 
   useEffect(() => {
@@ -59,12 +60,18 @@ export default function useSocket() {
       setSideQuest(data);
     });
 
+    socket.on('sidequest:accepted', () => {
+      setSideQuestPhase('active');
+    });
+
     socket.on('sidequest:closed', () => {
       clearSideQuest();
     });
 
-    socket.on('sidequest:resolved', () => {
-      clearSideQuest();
+    socket.on('sidequest:resolved', ({ won, drinksAtStake }) => {
+      useGameStore.getState().resolveSideQuest(won, drinksAtStake);
+      // Auto-close after 3s so everyone sees the result
+      setTimeout(() => clearSideQuest(), 3200);
     });
 
     socket.on('sidequest:votecast', ({ playerId, vote }) => {
@@ -85,6 +92,7 @@ export default function useSocket() {
       socket.off('bus:cardFlipped');
       socket.off('bus:finished');
       socket.off('sidequest:offer');
+      socket.off('sidequest:accepted');
       socket.off('sidequest:closed');
       socket.off('sidequest:resolved');
       socket.off('sidequest:votecast');

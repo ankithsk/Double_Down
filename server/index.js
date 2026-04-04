@@ -299,6 +299,23 @@ io.on('connection', (socket) => {
     io.to(game.roomCode).emit('sidequest:votecast', { playerId: socket.id, vote });
   });
 
+  // ─── game:restart ─────────────────────────────────────────────────────────
+  socket.on('game:restart', () => {
+    const meta = socketMeta.get(socket.id);
+    if (!meta) return;
+    const game = rooms.get(meta.roomCode);
+    if (!game || !game.players[socket.id]?.isHost) return;
+    // Reset to lobby — clear pairs, deck, scores
+    const freshGame = new GameManager(meta.roomCode, socket.id, game.players[socket.id].name);
+    // Re-add all connected players
+    for (const [id, player] of Object.entries(game.players)) {
+      if (!player.connected || id === socket.id) continue;
+      freshGame.addPlayer(id, player.name, false);
+    }
+    rooms.set(meta.roomCode, freshGame);
+    syncAll(freshGame);
+  });
+
   // ─── disconnect ───────────────────────────────────────────────────────────
   socket.on('disconnect', () => {
     const meta = socketMeta.get(socket.id);

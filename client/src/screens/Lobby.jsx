@@ -1,7 +1,9 @@
 import { useState, useCallback, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
 import socket from '../socket';
 import useGameStore from '../store/gameStore';
+import HowToPlay from '../components/HowToPlay';
 
 function InitialsAvatar({ name, color }) {
   const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
@@ -38,6 +40,7 @@ export default function Lobby() {
   const [selectingPair, setSelectingPair] = useState(null);
   const [gameMode, setGameMode] = useState('teams');
   const [showModePicker, setShowModePicker] = useState(false);
+  const [showHowToPlay, setShowHowToPlay] = useState(false);
 
   const roomCode = useGameStore(s => s.roomCode);
   const gameState = useGameStore(s => s.gameState);
@@ -146,10 +149,45 @@ export default function Lobby() {
   // ── Pre-room: name entry ────────────────────────────────────────────────
   if (!roomCode) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 20px' }}>
-        <div style={{ fontSize: 48, marginBottom: 8 }}>🃏</div>
-        <h1 style={{ fontSize: 34, fontWeight: 900, marginBottom: 4, textAlign: 'center' }}>Double Down</h1>
-        <p style={{ color: 'var(--text-muted)', marginBottom: 32, textAlign: 'center' }}>A drinking card game for groups</p>
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 20px', position: 'relative', overflow: 'hidden' }}>
+        {/* Animated background blobs */}
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+          <motion.div
+            animate={{ x: [0, 30, 0], y: [0, -20, 0], scale: [1, 1.1, 1] }}
+            transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+            style={{ position: 'absolute', top: '-10%', left: '-10%', width: '60vw', height: '60vw', borderRadius: '50%', background: 'radial-gradient(circle, rgba(107,107,255,0.15) 0%, transparent 70%)', filter: 'blur(40px)' }}
+          />
+          <motion.div
+            animate={{ x: [0, -25, 0], y: [0, 30, 0], scale: [1, 1.15, 1] }}
+            transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+            style={{ position: 'absolute', bottom: '-10%', right: '-10%', width: '70vw', height: '70vw', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,107,204,0.12) 0%, transparent 70%)', filter: 'blur(50px)' }}
+          />
+          <motion.div
+            animate={{ x: [0, 20, 0], y: [0, 25, 0] }}
+            transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 4 }}
+            style={{ position: 'absolute', top: '40%', left: '30%', width: '40vw', height: '40vw', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,217,61,0.08) 0%, transparent 70%)', filter: 'blur(30px)' }}
+          />
+        </div>
+
+        {/* Logo */}
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 200, damping: 18 }}
+          style={{ textAlign: 'center', marginBottom: 32, position: 'relative' }}
+        >
+          <motion.div
+            animate={{ rotate: [-3, 3, -3] }}
+            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+            style={{ fontSize: 64, marginBottom: 8, display: 'inline-block' }}
+          >
+            🃏
+          </motion.div>
+          <h1 style={{ fontSize: 36, fontWeight: 900, letterSpacing: '-1px', background: 'linear-gradient(135deg, #fff 30%, #c4b5fd)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 6 }}>
+            Double Down
+          </h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>A drinking card game for groups</p>
+        </motion.div>
 
         {error && (
           <div style={{ background: 'rgba(255,107,107,0.15)', border: '1px solid var(--accent-hot)', borderRadius: 10, padding: '10px 16px', marginBottom: 16, color: 'var(--accent-hot)', fontSize: 14, width: '100%', maxWidth: 380, textAlign: 'center' }}>
@@ -158,12 +196,17 @@ export default function Lobby() {
           </div>
         )}
 
-        <div style={{ width: '100%', maxWidth: 380 }}>
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.15 }}
+          style={{ width: '100%', maxWidth: 380 }}
+        >
           <input
             value={name} onChange={e => setName(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && (mode === 'create' ? handleCreate() : handleJoin())}
             placeholder="Your name" autoFocus maxLength={20}
-            style={{ width: '100%', background: 'var(--bg-surface)', border: '2px solid var(--border)', borderRadius: 14, padding: '14px 18px', color: 'var(--text-primary)', fontSize: 20, outline: 'none', marginBottom: 16 }}
+            style={{ width: '100%', background: 'var(--bg-surface)', border: '2px solid var(--border)', borderRadius: 14, padding: '14px 18px', color: 'var(--text-primary)', fontSize: 20, outline: 'none', marginBottom: 16, transition: 'border-color 0.15s' }}
           />
 
           <div style={{ display: 'flex', background: 'var(--bg-surface)', borderRadius: 12, padding: 4, marginBottom: 16 }}>
@@ -190,7 +233,16 @@ export default function Lobby() {
           >
             {mode === 'create' ? 'Create Room' : 'Join Game'}
           </button>
-        </div>
+
+          <button
+            onClick={() => setShowHowToPlay(true)}
+            style={{ width: '100%', background: 'transparent', border: '1px solid var(--border)', borderRadius: 14, padding: '14px', fontSize: 15, fontWeight: 600, color: 'var(--text-muted)', marginTop: 12 }}
+          >
+            📖 How to Play
+          </button>
+        </motion.div>
+
+        {showHowToPlay && <HowToPlay onClose={() => setShowHowToPlay(false)} />}
       </div>
     );
   }
@@ -198,6 +250,8 @@ export default function Lobby() {
   // ── In-room view ────────────────────────────────────────────────────────
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', padding: '24px 16px 100px' }}>
+
+      {showHowToPlay && <HowToPlay onClose={() => setShowHowToPlay(false)} />}
 
       {/* Room code */}
       <div style={{ textAlign: 'center', marginBottom: 24 }}>
@@ -219,10 +273,15 @@ export default function Lobby() {
 
       {/* Players */}
       <div style={{ marginBottom: 16 }}>
-        <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 12 }}>
-          {playerList.length} player{playerList.length !== 1 ? 's' : ''} in room
-          {isHost && ' — tap two players to pair them'}
-        </p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>
+            {playerList.length} player{playerList.length !== 1 ? 's' : ''} in room
+            {isHost && ' — tap two players to pair them'}
+          </p>
+          <button onClick={() => setShowHowToPlay(true)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 13, minHeight: 'auto', padding: '4px 8px', textDecoration: 'underline' }}>
+            Rules
+          </button>
+        </div>
         {playerList.map(p => {
           const pairName = getPairName(pairs, p.id);
           const isSelected = selectingPair === p.id;

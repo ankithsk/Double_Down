@@ -311,11 +311,10 @@ export default function SideQuestOverlay() {
   const activeSideQuest = useGameStore(s => s.activeSideQuest);
   const sideQuestVotes  = useGameStore(s => s.sideQuestVotes);
   const clearSideQuest  = useGameStore(s => s.clearSideQuest);
+  const phase           = useGameStore(s => s.sideQuestPhase);
+  const result          = useGameStore(s => s.sideQuestResult);
   const gameState       = useGameStore(s => s.gameState);
   const mySocketId      = useGameStore(s => s.mySocketId);
-
-  const [phase, setPhase] = useState('reveal'); // 'reveal' | 'active' | 'result'
-  const [result, setResult] = useState(null);
 
   const players      = gameState?.players || {};
   const isHost       = players[mySocketId]?.isHost;
@@ -325,14 +324,12 @@ export default function SideQuestOverlay() {
   const isMyQuest = pairPlayerIds.includes(mySocketId);
   const isActor   = isMyQuest && activeSideQuest?.type === 'charades';
 
-  // Reset phase whenever a new quest arrives
   const questKey = activeSideQuest ? `${activeSideQuest.type}-${activeSideQuest.contentIndex}` : null;
-  useEffect(() => { setPhase('reveal'); setResult(null); }, [questKey]);
 
   const handleAccept = useCallback(() => {
     sounds.sideQuest(); haptics.sideQuest();
     socket.emit('sidequest:accept');
-    setPhase('active');
+    // Phase transitions to 'active' via sidequest:accepted broadcast for all players
   }, []);
 
   const handleDecline = useCallback(() => {
@@ -346,8 +343,7 @@ export default function SideQuestOverlay() {
       won,
       drinksAtStake: activeSideQuest?.drinksAtStake,
     });
-    setResult({ won, drinksAtStake: activeSideQuest?.drinksAtStake });
-    setPhase('result');
+    // Result phase + auto-close handled via sidequest:resolved broadcast for all clients
   }, [activeSideQuest]);
 
   if (!activeSideQuest) return null;
@@ -395,7 +391,7 @@ export default function SideQuestOverlay() {
           </div>
         )}
         {phase === 'result' && result && (
-          <QuestResult won={result.won} drinksAtStake={result.drinksAtStake} onDismiss={clearSideQuest} />
+          <QuestResult won={result.won} drinksAtStake={result.drinksAtStake} onDismiss={() => {}} />
         )}
       </motion.div>
     </AnimatePresence>

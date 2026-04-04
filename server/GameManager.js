@@ -476,7 +476,8 @@ class GameManager {
     if (!pair?.busState) return null;
     pair.busState.active = false;
     pair.busState.finished = true;
-    const totalDrinks = pair.busState.drinksPending;
+    // Don't double-count: busDecide('bail') already added drinksPending*2 to drinkCount
+    const totalDrinks = pair.busState.bailed ? 0 : pair.busState.drinksPending;
     pair.drinkCount += totalDrinks;
 
     const allDone = Object.values(this.pairs).filter(p => p.onBus).every(p => p.busState?.finished);
