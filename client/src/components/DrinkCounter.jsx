@@ -1,31 +1,17 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { useEffect, useState } from 'react';
-
-export default function DrinkCounter({ count, label = 'drinks', highlight = false }) {
-  const [displayed, setDisplayed] = useState(count);
-  const [bump, setBump] = useState(false);
-
-  useEffect(() => {
-    if (count !== displayed) {
-      setBump(true);
-      const t = setTimeout(() => {
-        setDisplayed(count);
-        setBump(false);
-      }, 200);
-      return () => clearTimeout(t);
-    }
-  }, [count]);
-
+export default function DrinkCounter({ count, label = 'sips' }) {
   return (
-    <div style={{ textAlign: 'center' }}>
-      <motion.div
-        animate={bump ? { scale: 1.4, color: '#e53e3e' } : { scale: 1, color: highlight ? '#e53e3e' : '#fff' }}
-        transition={{ duration: 0.2 }}
-        style={{ fontSize: 48, fontWeight: 900, lineHeight: 1 }}
-      >
-        {displayed}
-      </motion.div>
-      <div style={{ fontSize: 14, opacity: 0.7, textTransform: 'uppercase', letterSpacing: 2 }}>{label}</div>
+    <div style={{
+      background: count > 0 ? 'rgba(255,107,107,0.15)' : 'rgba(255,255,255,0.05)',
+      border: `1px solid ${count > 0 ? 'rgba(255,107,107,0.3)' : 'rgba(255,255,255,0.1)'}`,
+      borderRadius: 8,
+      padding: '3px 10px',
+      fontSize: 13,
+      fontWeight: 700,
+      color: count > 0 ? 'var(--accent-hot)' : 'var(--text-muted)',
+      fontVariantNumeric: 'tabular-nums',
+      whiteSpace: 'nowrap',
+    }}>
+      {count} {label}
     </div>
   );
 }
