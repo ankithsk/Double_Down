@@ -12,7 +12,7 @@ const httpServer = createServer(app);
 if (process.env.NODE_ENV === 'production') {
   const clientDist = path.join(__dirname, '..', 'client', 'dist');
   app.use(express.static(clientDist));
-  app.get('*', (req, res) => res.sendFile(path.join(clientDist, 'index.html')));
+  app.get('/{*path}', (req, res) => res.sendFile(path.join(clientDist, 'index.html')));
 }
 const io = new Server(httpServer, {
   cors: {
