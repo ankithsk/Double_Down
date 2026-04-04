@@ -11,6 +11,9 @@ export default function useSocket() {
     setLastReveal,
     setLastBusCard,
     setBusFinalResult,
+    setSideQuest,
+    clearSideQuest,
+    addSideQuestVote,
   } = useGameStore();
 
   useEffect(() => {
@@ -52,6 +55,22 @@ export default function useSocket() {
       setBusFinalResult(data);
     });
 
+    socket.on('sidequest:offer', (data) => {
+      setSideQuest(data);
+    });
+
+    socket.on('sidequest:closed', () => {
+      clearSideQuest();
+    });
+
+    socket.on('sidequest:resolved', () => {
+      clearSideQuest();
+    });
+
+    socket.on('sidequest:votecast', ({ playerId, vote }) => {
+      addSideQuestVote(playerId, vote);
+    });
+
     socket.on('player:disconnected', ({ name }) => {
       // Could show a toast — handled in App
     });
@@ -65,6 +84,10 @@ export default function useSocket() {
       socket.off('round:reveal');
       socket.off('bus:cardFlipped');
       socket.off('bus:finished');
+      socket.off('sidequest:offer');
+      socket.off('sidequest:closed');
+      socket.off('sidequest:resolved');
+      socket.off('sidequest:votecast');
       socket.off('player:disconnected');
     };
   }, []);

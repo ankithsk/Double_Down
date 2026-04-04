@@ -12,6 +12,8 @@ const useGameStore = create((set, get) => ({
   lastReveal: null,   // { pairId, card, drinks, hit, disagreed, correct }
   lastBusCard: null,  // { pairId, card, drinks, finished, safe }
   busFinalResult: null,
+  activeSideQuest: null,   // { type, contentIndex, pairId, drinksAtStake }
+  sideQuestVotes: {},      // { [playerId]: 'yes' | 'no' }
 
   setRoomCode: (code) => set({ roomCode: code }),
   setMySocketId: (id) => set({ mySocketId: id }),
@@ -30,6 +32,11 @@ const useGameStore = create((set, get) => ({
   setLastReveal: (reveal) => set({ lastReveal: reveal }),
   setLastBusCard: (card) => set({ lastBusCard: card }),
   setBusFinalResult: (result) => set({ busFinalResult: result }),
+  setSideQuest: (sq) => set({ activeSideQuest: sq, sideQuestVotes: {} }),
+  clearSideQuest: () => set({ activeSideQuest: null, sideQuestVotes: {} }),
+  addSideQuestVote: (playerId, vote) => set(s => ({
+    sideQuestVotes: { ...s.sideQuestVotes, [playerId]: vote },
+  })),
 }));
 
 export default useGameStore;

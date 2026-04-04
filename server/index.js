@@ -157,6 +157,7 @@ io.on('connection', (socket) => {
     // Solo: submitGuess already resolved and returned the result object
     if (typeof ok === 'object') {
       io.to(game.roomCode).emit('round:reveal', { pairId: player.pairId, ...ok });
+      maybeSendSideQuest(game, game.pairs[player.pairId]);
       syncAll(game);
       return;
     }
@@ -179,6 +180,7 @@ io.on('connection', (socket) => {
     const result = game.submitPartnerResponse(player.pairId, socket.id, response);
     if (!result) return;
     io.to(game.roomCode).emit('round:reveal', { pairId: player.pairId, ...result });
+    maybeSendSideQuest(game, game.pairs[player.pairId]);
     syncAll(game);
   });
 
@@ -240,6 +242,50 @@ io.on('connection', (socket) => {
       io.to(game.roomCode).emit('bus:finished', { pairId: busPair.id, ...result });
       syncAll(game);
     }
+  });
+
+  // ─── sidequest:decline ───────────────────────────────────────────────────
+  socket.on('sidequest:decline', () => {
+    const meta = socketMeta.get(socket.id);
+    if (!meta) return;
+    const game = rooms.get(meta.roomCode);
+    if (!game) return;
+    io.to(game.roomCode).emit('sidequest:closed');
+  });
+
+  // ─── sidequest:accept ────────────────────────────────────────────────────
+  socket.on('sidequest:accept', () => {
+    // Client-side only — just broadcast so all screens show active quest UI
+    const meta = socketMeta.get(socket.id);
+    if (!meta) return;
+    const game = rooms.get(meta.roomCode);
+    if (!game) return;
+    io.to(game.roomCode).emit('sidequest:accepted', { playerId: socket.id });
+  });
+
+  // ─── sidequest:result ────────────────────────────────────────────────────
+  socket.on('sidequest:result', ({ pairId, won, drinksAtStake }) => {
+    const meta = socketMeta.get(socket.id);
+    if (!meta) return;
+    const game = rooms.get(meta.roomCode);
+    if (!game || !game.players[socket.id]?.isHost) return;
+    const pair = game.pairs[pairId];
+    if (!pair) return;
+    if (won) {
+      pair.drinkCount = Math.max(0, pair.drinkCount - drinksAtStake);
+      pair.pendingDrinks = 0;
+    }
+    io.to(game.roomCode).emit('sidequest:resolved', { pairId, won, drinksAtStake });
+    syncAll(game);
+  });
+
+  // ─── sidequest:vote ──────────────────────────────────────────────────────
+  socket.on('sidequest:vote', ({ vote }) => {
+    const meta = socketMeta.get(socket.id);
+    if (!meta) return;
+    const game = rooms.get(meta.roomCode);
+    if (!game) return;
+    io.to(game.roomCode).emit('sidequest:votecast', { playerId: socket.id, vote });
   });
 
   // ─── disconnect ───────────────────────────────────────────────────────────

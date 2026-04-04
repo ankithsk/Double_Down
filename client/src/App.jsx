@@ -3,6 +3,7 @@ import useGameStore from './store/gameStore';
 import Lobby from './screens/Lobby';
 import Game from './screens/Game';
 import BusRide from './screens/BusRide';
+import SideQuestOverlay from './components/SideQuestOverlay';
 import socket from './socket';
 
 const GAME_PHASES = ['ROUND_1', 'ROUND_2', 'ROUND_3', 'ROUND_4'];
@@ -91,8 +92,13 @@ export default function App() {
   const gameState = useGameStore(s => s.gameState);
   const phase = gameState?.phase || 'LOBBY';
 
-  if (phase === 'BUS') return <BusRide />;
-  if (phase === 'GAME_OVER') return <GameOver />;
-  if (GAME_PHASES.includes(phase)) return <Game />;
-  return <Lobby />;
+  return (
+    <>
+      {phase === 'BUS' && <BusRide />}
+      {phase === 'GAME_OVER' && <GameOver />}
+      {GAME_PHASES.includes(phase) && <Game />}
+      {phase === 'LOBBY' && <Lobby />}
+      <SideQuestOverlay />
+    </>
+  );
 }
