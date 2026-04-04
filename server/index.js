@@ -1,11 +1,19 @@
 const express = require('express');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
+const path = require('path');
 const GameManager = require('./GameManager');
 const { PHASES } = require('./constants');
 
 const app = express();
 const httpServer = createServer(app);
+
+// Serve built client in production
+if (process.env.NODE_ENV === 'production') {
+  const clientDist = path.join(__dirname, '..', 'client', 'dist');
+  app.use(express.static(clientDist));
+  app.get('*', (req, res) => res.sendFile(path.join(clientDist, 'index.html')));
+}
 const io = new Server(httpServer, {
   cors: { origin: '*' },
 });
