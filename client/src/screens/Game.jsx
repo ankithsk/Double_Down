@@ -108,11 +108,15 @@ function RevealOverlay({ reveal, onDismiss }) {
   );
 }
 
-function getMyTurn(phase, pair, mySocketId) {
+function getMyTurn(phase, pair, mySocketId, gameMode) {
   const rs = pair?.roundState;
   if (!rs || rs.resolved) return null;
 
   if (phase === 'ROUND_1') {
+    // Solo: waitingFor is always 'guess' — show R1 buttons immediately
+    if (gameMode === 'solo_individual') {
+      return rs.waitingFor === 'guess' && mySocketId === rs.guessBy ? 'r1' : null;
+    }
     const isA = mySocketId === pair.playerIds[0];
     if (rs.waitingFor === 'bothGuess') {
       const myGuess = isA ? rs.guessA : rs.guessB;
@@ -132,6 +136,7 @@ export default function Game() {
   const myPairId = useGameStore(s => s.myPairId);
   const lastReveal = useGameStore(s => s.lastReveal);
   const setLastReveal = useGameStore(s => s.setLastReveal);
+  const gameMode = useGameStore(s => s.gameMode);
 
   const [showReveal, setShowReveal] = useState(null);
   const [nextRoundThrottle, setNextRoundThrottle] = useState(false);
@@ -152,7 +157,7 @@ export default function Game() {
 
   const dismissReveal = useCallback(() => setShowReveal(null), []);
 
-  const myTurn = getMyTurn(phase, myPair, mySocketId);
+  const myTurn = getMyTurn(phase, myPair, mySocketId, gameMode);
 
   const handleR1Guess = useCallback((guess) => {
     socket.emit('round:r1Guess', { guess });
@@ -189,10 +194,10 @@ export default function Game() {
       const myGuess = isA ? rs.guessA : rs.guessB;
       if (myGuess) return 'Waiting for partner to guess…';
     }
-    if (rs.waitingFor === 'partnerResponse' && mySocketId === rs.guessBy) {
+    if (rs.waitingFor === 'partnerResponse' && mySocketId === rs.guessBy && gameMode !== 'solo_individual') {
       return 'Waiting for partner response…';
     }
-    if (rs.waitingFor === 'guess' && mySocketId !== rs.guessBy) {
+    if (rs.waitingFor === 'guess' && mySocketId !== rs.guessBy && gameMode !== 'solo_individual') {
       return `${players[rs.guessBy]?.name || 'Partner'} is guessing…`;
     }
     return null;
@@ -200,6 +205,14 @@ export default function Game() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}>
+      {/* Solo mode badge */}
+      {gameMode === 'solo_individual' && (
+        <div style={{ textAlign: 'center', padding: '8px 16px 0' }}>
+          <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--accent-gold)', background: 'rgba(255,217,61,0.1)', border: '1px solid rgba(255,217,61,0.3)', borderRadius: 6, padding: '3px 10px' }}>
+            Every Man for Himself
+          </span>
+        </div>
+      )}
       {/* Pair panels — scrollable top section */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 0' }}>
         {sortedPairs.map(pair => (
@@ -231,7 +244,7 @@ export default function Game() {
         {myTurn === 'guess' && phase === 'ROUND_4' && (
           <R4Buttons onGuess={handleGuess} disabled={false} />
         )}
-        {myTurn === 'partnerResponse' && (
+        {myTurn === 'partnerResponse' && gameMode !== 'solo_individual' && (
           <PartnerResponseButtons onResponse={handlePartnerResponse} disabled={false} />
         )}
         {!myTurn && waitingMsg && (

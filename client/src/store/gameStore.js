@@ -6,6 +6,7 @@ const useGameStore = create((set, get) => ({
   myPairId: null,
   playerName: null,
   gameState: null,
+  gameMode: 'teams',
   pendingAction: false,
   error: null,
   lastReveal: null,   // { pairId, card, drinks, hit, disagreed, correct }
@@ -21,7 +22,7 @@ const useGameStore = create((set, get) => ({
     if (me && state?.players?.[me]?.pairId) {
       pairId = state.players[me].pairId;
     }
-    set({ gameState: state, myPairId: pairId });
+    set({ gameState: state, myPairId: pairId, gameMode: state?.gameMode || 'teams' });
   },
   setPendingAction: (val) => set({ pendingAction: val }),
   setError: (msg) => set({ error: msg }),

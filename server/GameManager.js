@@ -12,6 +12,7 @@ class GameManager {
     this.deck = [];
     this.round = 1;
     this.mode = MODES.SOLO;
+    this.gameMode = 'teams'; // 'teams' | 'solo_individual'
     this.bracket = null;
     this._partnerTimeouts = {}; // pairId -> timeout handle
     this._nextPairIndex = 0;
@@ -135,19 +136,33 @@ class GameManager {
   canStart() {
     const connected = Object.values(this.players).filter(p => p.connected);
     if (connected.length < 2) return { ok: false, reason: 'Need at least 2 players' };
-    if (connected.some(p => !p.pairId)) return { ok: false, reason: 'All players must be in pairs' };
+    if (this.gameMode !== 'solo_individual' && connected.some(p => !p.pairId)) {
+      return { ok: false, reason: 'All players must be in pairs' };
+    }
     return { ok: true };
   }
 
   // ─── Game Start ──────────────────────────────────────────────────────────
 
-  startGame() {
+  startGame(gameMode = 'teams') {
+    this.gameMode = gameMode;
     this.deck = createShuffledDeck();
     this.round = 1;
     this.phase = PHASES.ROUND_1;
 
     if (this.mode === MODES.TOURNAMENT) {
       this._buildBracket();
+    }
+
+    // In solo mode, create synthetic solo pairs — one per player
+    if (this.gameMode === 'solo_individual') {
+      this.pairs = {};
+      this._nextPairIndex = 0;
+      for (const player of Object.values(this.players).filter(p => p.connected)) {
+        const pairId = `pair-${this._nextPairIndex++}`;
+        this.pairs[pairId] = this._newPair(pairId, [player.id]);
+        player.pairId = pairId;
+      }
     }
 
     // Deal one card face-down to each pair
@@ -157,7 +172,9 @@ class GameManager {
       pair.pendingDrinks = 0;
       const card = this.deck.pop();
       pair.hand.push({ ...card, faceUp: false });
-      pair.roundState = this._newRoundState(pair, 1);
+      pair.roundState = this.gameMode === 'solo_individual'
+        ? this._newRoundStateSolo(pair.playerIds[0], 1)
+        : this._newRoundState(pair, 1);
     }
   }
 
@@ -176,12 +193,35 @@ class GameManager {
     };
   }
 
+  _newRoundStateSolo(playerId, round) {
+    return {
+      round,
+      guessBy: playerId,
+      partnerOf: null,
+      guessA: null,
+      guessB: null,
+      guess: null,
+      partnerResponse: 'none',
+      waitingFor: 'guess',
+      resolved: false,
+    };
+  }
+
   // ─── Round 1: Red or Black ────────────────────────────────────────────────
 
   submitR1Guess(pairId, playerId, guess) {
     const pair = this.pairs[pairId];
     if (!pair || pair.roundState?.round !== 1) return null;
     const rs = pair.roundState;
+
+    // Solo: single player guesses — resolve immediately, no partner needed
+    if (this.gameMode === 'solo_individual') {
+      if (rs.waitingFor !== 'guess') return null;
+      rs.guessA = guess;
+      rs.guessB = guess; // same player, no disagreement
+      return this._resolveRound1(pair);
+    }
+
     const isA = playerId === pair.playerIds[0];
 
     if (isA) rs.guessA = guess;
@@ -228,6 +268,13 @@ class GameManager {
     const rs = pair.roundState;
     if (rs.waitingFor !== 'guess' || playerId !== rs.guessBy) return null;
     rs.guess = guess;
+
+    // Solo: no partner response step — resolve immediately
+    if (this.gameMode === 'solo_individual') {
+      rs.partnerResponse = 'none';
+      return this._resolveRound(pair);
+    }
+
     rs.waitingFor = 'partnerResponse';
     return true;
   }
@@ -244,65 +291,6 @@ class GameManager {
     return this._resolveRound(pair);
   }
 
-  _resolveRound(pair) {
-    const rs = pair.roundState;
-    const round = rs.round;
-    const card = pair.hand[round - 1]; // current card (0-indexed)
-    const prevCard = pair.hand[round - 2];
-    card.faceUp = true;
-
-    const hit = this._checkGuess(rs.guess, card, prevCard, round);
-    let drinks = 0;
-
-    if (!hit) {
-      const baseDrinks = round === 4 ? 3 : round === 3 ? 2 : 1;
-      if (rs.partnerResponse === 'doubleDown') {
-        drinks = baseDrinks * 2;
-      } else if (rs.partnerResponse === 'shield') {
-        drinks = Math.ceil(baseDrinks / 2);
-      } else {
-        drinks = baseDrinks;
-      }
-    }
-
-    // Shield penalty drink (regardless of outcome)
-    let shieldPenalty = 0;
-    if (rs.partnerResponse === 'shield') {
-      shieldPenalty = 1;
-    }
-
-    const totalDrinks = drinks + shieldPenalty;
-    pair.pendingDrinks = totalDrinks;
-    pair.drinkCount += totalDrinks;
-    rs.waitingFor = 'resolved';
-    rs.resolved = true;
-    rs.hit = hit;
-
-    return { card, drinks: totalDrinks, hit, shieldPenalty };
-  }
-
-  _checkGuess(guess, card, prevCard, round) {
-    if (round === 2) {
-      const curr = NUMERIC_VALUE[card.value];
-      const prev = NUMERIC_VALUE[prevCard.value];
-      if (guess === 'higher') return curr > prev;
-      if (guess === 'lower') return curr < prev;
-      if (guess === 'equal') return curr === prev;
-    }
-    if (round === 3) {
-      const curr = NUMERIC_VALUE[card.value];
-      const lo = Math.min(NUMERIC_VALUE[pair_hand_first_val(prevCard)], NUMERIC_VALUE[pair_hand_second_val(prevCard)]);
-      // inside/outside relative to first two cards
-      // this gets called with prevCard being the 2nd card, need first card too
-      // We'll handle this differently — see resolveRound3
-    }
-    if (round === 4) {
-      return SUITS.includes(guess) && guess === card.suit;
-    }
-    return false;
-  }
-
-  // Better round resolution that has access to full hand
   _resolveRound(pair) {
     const rs = pair.roundState;
     const round = rs.round;
@@ -376,15 +364,18 @@ class GameManager {
       pair.hand.push({ ...card, faceUp: false });
       pair.pendingDrinks = 0;
 
-      // Swap guesser role each round
-      const [playerA, playerB] = pair.playerIds;
-      const rs = this._newRoundState(pair, this.round);
-      // Alternate: even rounds = B guesses, odd = A guesses
-      if (this.round % 2 === 0) {
-        rs.guessBy = playerB;
-        rs.partnerOf = playerA;
+      if (this.gameMode === 'solo_individual') {
+        pair.roundState = this._newRoundStateSolo(pair.playerIds[0], this.round);
+      } else {
+        const [playerA, playerB] = pair.playerIds;
+        const rs = this._newRoundState(pair, this.round);
+        // Alternate: even rounds = B guesses, odd = A guesses
+        if (this.round % 2 === 0) {
+          rs.guessBy = playerB;
+          rs.partnerOf = playerA;
+        }
+        pair.roundState = rs;
       }
-      pair.roundState = rs;
     }
     return true;
   }
@@ -395,7 +386,11 @@ class GameManager {
     this.phase = PHASES.BUS;
     let busRiders;
 
-    if (this.mode === MODES.SOLO) {
+    if (this.gameMode === 'solo_individual') {
+      // Player with the most drinks rides the bus
+      const sorted = Object.values(this.pairs).sort((a, b) => b.drinkCount - a.drinkCount);
+      busRiders = [sorted[0]];
+    } else if (this.mode === MODES.SOLO) {
       busRiders = Object.values(this.pairs);
     } else if (this.mode === MODES.PAIRS) {
       const sorted = Object.values(this.pairs).sort((a, b) => b.drinkCount - a.drinkCount);
@@ -411,11 +406,12 @@ class GameManager {
       pair.busState = {
         active: true,
         flipperId: flipper,
-        deciderId: decider,
+        deciderId: flipper, // in solo, same person flips and decides — no bail option
         cardsFlipped: [],
         drinksPending: 0,
         bailed: false,
         finished: false,
+        isSolo: this.gameMode === 'solo_individual',
       };
     }
   }
@@ -520,6 +516,7 @@ class GameManager {
       phase: this.phase,
       round: this.round,
       mode: this.mode,
+      gameMode: this.gameMode,
       players: this.players,
       pairs: this.pairs,
       bracket: this.bracket,

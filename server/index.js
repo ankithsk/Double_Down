@@ -55,9 +55,10 @@ io.on('connection', (socket) => {
   }
 
   // ─── room:create ──────────────────────────────────────────────────────────
-  socket.on('room:create', ({ playerName: name }) => {
+  socket.on('room:create', ({ playerName: name, gameMode = 'teams' }) => {
     const code = generateRoomCode();
     const game = new GameManager(code, socket.id, name);
+    game.gameMode = gameMode;
     rooms.set(code, game);
     socketMeta.set(socket.id, { roomCode: code });
     socket.join(code);
@@ -105,7 +106,7 @@ io.on('connection', (socket) => {
   });
 
   // ─── game:start ──────────────────────────────────────────────────────────
-  socket.on('game:start', () => {
+  socket.on('game:start', ({ gameMode = 'teams' } = {}) => {
     const meta = socketMeta.get(socket.id);
     if (!meta) return;
     const game = rooms.get(meta.roomCode);
@@ -115,7 +116,7 @@ io.on('connection', (socket) => {
       socket.emit('room:error', { message: check.reason });
       return;
     }
-    game.startGame();
+    game.startGame(gameMode);
     syncAll(game);
   });
 
@@ -145,7 +146,13 @@ io.on('connection', (socket) => {
     if (!player?.pairId) return;
     const ok = game.submitGuess(player.pairId, socket.id, guess);
     if (!ok) return;
-    // Start timeout for partner
+    // Solo: submitGuess already resolved and returned the result object
+    if (typeof ok === 'object') {
+      io.to(game.roomCode).emit('round:reveal', { pairId: player.pairId, ...ok });
+      syncAll(game);
+      return;
+    }
+    // Teams: start timeout for partner response
     game.startPartnerTimeout(player.pairId, (pairId, result) => {
       io.to(game.roomCode).emit('round:reveal', { pairId, ...result });
       syncAll(game);
@@ -218,11 +225,11 @@ io.on('connection', (socket) => {
     if (!meta) return;
     const game = rooms.get(meta.roomCode);
     if (!game || !game.players[socket.id]?.isHost) return;
-    const player = game.players[socket.id];
-    if (!player?.pairId) return;
-    const result = game.endBus(player.pairId);
+    const busPair = Object.values(game.pairs).find(p => p.onBus && p.busState?.active);
+    if (!busPair) return;
+    const result = game.endBus(busPair.id);
     if (result) {
-      io.to(game.roomCode).emit('bus:finished', { pairId: player.pairId, ...result });
+      io.to(game.roomCode).emit('bus:finished', { pairId: busPair.id, ...result });
       syncAll(game);
     }
   });

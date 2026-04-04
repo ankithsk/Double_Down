@@ -36,6 +36,8 @@ export default function Lobby() {
   const [joinCode, setJoinCode] = useState('');
   const [copied, setCopied] = useState(false);
   const [selectingPair, setSelectingPair] = useState(null);
+  const [gameMode, setGameMode] = useState('teams');
+  const [showModePicker, setShowModePicker] = useState(false);
 
   const roomCode = useGameStore(s => s.roomCode);
   const gameState = useGameStore(s => s.gameState);
@@ -61,9 +63,14 @@ export default function Lobby() {
 
   const handleCreate = useCallback(() => {
     if (!name.trim()) return;
-    if (socket.connected) { socket.emit('room:create', { playerName: name.trim() }); }
-    else { socket.auth = {}; socket.once('connect', () => socket.emit('room:create', { playerName: name.trim() })); socket.connect(); }
+    setShowModePicker(true);
   }, [name]);
+
+  const handleConfirmCreate = useCallback(() => {
+    setShowModePicker(false);
+    if (socket.connected) { socket.emit('room:create', { playerName: name.trim(), gameMode }); }
+    else { socket.auth = {}; socket.once('connect', () => socket.emit('room:create', { playerName: name.trim(), gameMode })); socket.connect(); }
+  }, [name, gameMode]);
 
   const handleJoin = useCallback(() => {
     if (!name.trim() || !joinCode.trim()) return;
@@ -77,7 +84,7 @@ export default function Lobby() {
   }, [roomCode]);
 
   const handleAutoPair = useCallback(() => { socket.emit('pair:autoAssign'); }, []);
-  const handleStart = useCallback(() => { socket.emit('game:start'); }, []);
+  const handleStart = useCallback(() => { socket.emit('game:start', { gameMode }); }, [gameMode]);
 
   const handlePlayerTap = useCallback((playerId) => {
     if (!isHost) return;
@@ -89,6 +96,52 @@ export default function Lobby() {
   }, [isHost, selectingPair]);
 
   const joinUrl = roomCode ? `${window.location.origin}?join=${roomCode}` : '';
+
+  // ── Mode picker (shown after name entered, before room is created) ─────────
+  if (showModePicker && !roomCode) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 20px' }}>
+        <div style={{ fontSize: 36, marginBottom: 8 }}>🎮</div>
+        <h1 style={{ fontSize: 28, fontWeight: 900, marginBottom: 4, letterSpacing: '-0.5px' }}>Game Mode</h1>
+        <p style={{ color: 'var(--text-muted)', marginBottom: 32, textAlign: 'center' }}>How are you playing tonight?</p>
+
+        <div style={{ width: '100%', maxWidth: 380, display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
+          {[
+            { value: 'teams', icon: '👥', title: 'Teams', desc: 'Pair up — share drinks, use partner moves (Double Down / Shield)' },
+            { value: 'solo_individual', icon: '🧍', title: 'Every Man for Himself', desc: 'Everyone plays individually — pure chaos, no partners' },
+          ].map(({ value, icon, title, desc }) => (
+            <button key={value} onClick={() => setGameMode(value)} style={{
+              background: gameMode === value ? 'rgba(107,107,255,0.2)' : 'var(--bg-surface)',
+              border: gameMode === value ? '2px solid var(--accent-primary)' : '1px solid var(--border)',
+              boxShadow: gameMode === value ? 'var(--glow-purple)' : 'none',
+              borderRadius: 16, padding: '16px 20px',
+              display: 'flex', alignItems: 'flex-start', gap: 14,
+              color: 'var(--text-primary)', textAlign: 'left', transition: 'all 0.15s',
+            }}>
+              <span style={{ fontSize: 28, flexShrink: 0 }}>{icon}</span>
+              <div>
+                <div style={{ fontWeight: 800, fontSize: 17, marginBottom: 4 }}>{title}</div>
+                <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.4 }}>{desc}</div>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        <button onClick={handleConfirmCreate} style={{
+          width: '100%', maxWidth: 380,
+          background: 'linear-gradient(135deg, #6b6bff, #ff6bcc)',
+          color: '#fff', border: 'none', borderRadius: 16,
+          padding: '18px', fontSize: 18, fontWeight: 800,
+          boxShadow: 'var(--glow-purple)',
+        }}>
+          Create Room →
+        </button>
+        <button onClick={() => setShowModePicker(false)} style={{ marginTop: 12, background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 14, minHeight: 'auto' }}>
+          ← Back
+        </button>
+      </div>
+    );
+  }
 
   // ── Pre-room: name entry ────────────────────────────────────────────────
   if (!roomCode) {

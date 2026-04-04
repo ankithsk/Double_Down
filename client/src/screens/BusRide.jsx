@@ -123,7 +123,9 @@ export default function BusRide() {
 
         ) : isDecider ? (
           <div style={{ textAlign: 'center' }}>
-            <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 16 }}>Your call — help your partner or save yourself.</p>
+            <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 16 }}>
+              {busState.isSolo ? 'Keep flipping or end the ride.' : 'Your call — help your partner or save yourself.'}
+            </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <button onClick={() => handleDecide('continue')} style={{
                 width: '100%',
@@ -133,15 +135,17 @@ export default function BusRide() {
               }}>
                 Keep Going
               </button>
-              <button onClick={() => handleDecide('bail')} style={{
-                width: '100%',
-                background: 'rgba(255,107,107,0.1)',
-                color: 'var(--accent-hot)',
-                border: '2px solid var(--accent-hot)',
-                borderRadius: 14, padding: '14px', fontSize: 15, fontWeight: 700,
-              }}>
-                Bail on {flipperName} 💀 (their sips ×2)
-              </button>
+              {!busState.isSolo && (
+                <button onClick={() => handleDecide('bail')} style={{
+                  width: '100%',
+                  background: 'rgba(255,107,107,0.1)',
+                  color: 'var(--accent-hot)',
+                  border: '2px solid var(--accent-hot)',
+                  borderRadius: 14, padding: '14px', fontSize: 15, fontWeight: 700,
+                }}>
+                  Bail on {flipperName} 💀 (their sips ×2)
+                </button>
+              )}
             </div>
           </div>
 
