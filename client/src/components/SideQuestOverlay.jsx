@@ -48,7 +48,10 @@ function QuestReveal({ quest, isMyQuest, players, onAccept, onDecline }) {
           <button onClick={onDecline} style={{ background: 'transparent', color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 14, padding: '12px', fontSize: 14, fontWeight: 600 }}>skip it (keep drinks)</button>
         </div>
       ) : (
-        <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>Waiting for {pairNames} to decide…</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%' }}>
+          <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, textAlign: 'center' }}>Waiting for {pairNames} to decide…</div>
+          <button onClick={onDecline} style={{ background: 'transparent', color: 'rgba(255,255,255,0.25)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: '10px', fontSize: 13, fontWeight: 600 }}>Host: skip this quest</button>
+        </div>
       )}
     </motion.div>
   );
@@ -375,6 +378,21 @@ export default function SideQuestOverlay() {
         )}
         {phase === 'active' && activeSideQuest.type === 'rapidfire' && (
           <RapidFireQuest quest={activeSideQuest} isMyQuest={isMyQuest} isHost={isHost} onHostResult={handleHostResult} />
+        )}
+
+        {/* Host escape hatch — always visible on active screen so game can never get stuck */}
+        {phase === 'active' && isHost && (
+          <div style={{ position: 'absolute', bottom: 32, display: 'flex', gap: 10, width: '100%', maxWidth: 380, padding: '0 16px' }}>
+            <button onClick={() => handleHostResult(true)} style={{ flex: 1, background: 'rgba(107,255,184,0.1)', border: '1px solid rgba(107,255,184,0.3)', borderRadius: 12, padding: '12px', color: 'var(--accent-green)', fontSize: 13, fontWeight: 700 }}>✓ Mark Won</button>
+            <button onClick={() => handleHostResult(false)} style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px', color: 'var(--text-muted)', fontSize: 13, fontWeight: 700 }}>✗ Mark Lost</button>
+          </div>
+        )}
+
+        {/* Non-host spectator waiting message */}
+        {phase === 'active' && !isHost && !isMyQuest && (
+          <div style={{ position: 'absolute', bottom: 40, color: 'rgba(255,255,255,0.3)', fontSize: 13, textAlign: 'center' }}>
+            Waiting for host to close the quest…
+          </div>
         )}
         {phase === 'result' && result && (
           <QuestResult won={result.won} drinksAtStake={result.drinksAtStake} onDismiss={clearSideQuest} />
