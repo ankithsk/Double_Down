@@ -257,6 +257,7 @@ class GameManager {
     rs.resolved = true;
     rs.correct = correct;
 
+    pair._pendingSideQuest = this._maybeTriggerSideQuest(pair);
     return { card, drinks, disagreed: rs.guessA !== rs.guessB, correct };
   }
 
@@ -317,6 +318,7 @@ class GameManager {
     rs.resolved = true;
     rs.hit = hit;
 
+    pair._pendingSideQuest = this._maybeTriggerSideQuest(pair);
     return { card, drinks: totalDrinks, hit, shieldPenalty };
   }
 
@@ -455,6 +457,18 @@ class GameManager {
     }
     // 'continue' — just keep going
     return { bailed: false };
+  }
+
+  // ─── Side Quest Trigger ───────────────────────────────────────────────────
+
+  _maybeTriggerSideQuest(pair) {
+    const drinks = pair.pendingDrinks || 0;
+    if (drinks < 2) return null;
+    if (Math.random() > 0.4) return null;
+    const types = ['charades', 'rapidfire', 'dare', 'mimicry', 'trivia'];
+    const type = types[Math.floor(Math.random() * types.length)];
+    const contentIndex = Math.floor(Math.random() * 1000);
+    return { type, contentIndex, pairId: pair.id, drinksAtStake: drinks };
   }
 
   endBus(pairId) {

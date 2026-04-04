@@ -1,0 +1,80 @@
+<h2>How does the lobby handle solo vs team play?</h2>
+<p class="subtitle">4 people, two ways to play. Pick the lobby flow that makes most sense.</p>
+
+<div class="cards">
+
+  <!-- Option A: Host picks mode upfront -->
+  <div class="card" data-choice="host-picks" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0f0a1a;border-radius:8px;padding:16px;min-height:220px;">
+      <div style="font-size:10px;font-weight:800;letter-spacing:3px;color:#ffd93d;text-transform:uppercase;margin-bottom:10px;text-align:center;">STEP 1 OF 2 — GAME MODE</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
+        <div style="background:linear-gradient(135deg,rgba(107,107,255,0.3),rgba(255,107,107,0.2));border:2px solid #6b6bff;border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:24px;">👥</span>
+          <div>
+            <div style="font-size:13px;font-weight:800;color:#fff;">Teams</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.6);">Pair up, share drinks, use partner moves</div>
+          </div>
+          <div style="margin-left:auto;width:18px;height:18px;border-radius:50%;background:#6b6bff;display:flex;align-items:center;justify-content:center;font-size:10px;">✓</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:24px;">🧍</span>
+          <div>
+            <div style="font-size:13px;font-weight:800;color:#fff;">Every Man for Himself</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.6);">Solo play, no partners, pure chaos</div>
+          </div>
+        </div>
+      </div>
+      <div style="background:#6b6bff;border-radius:8px;padding:10px;text-align:center;font-size:13px;font-weight:800;color:#fff;">Next: Add Players →</div>
+    </div>
+    <div class="card-body">
+      <h3>Host Picks Mode First</h3>
+      <p>Host selects the mode before anyone joins. Clean and intentional — everyone knows the format from the start.</p>
+    </div>
+  </div>
+
+  <!-- Option B: Mode toggle in lobby, auto-adapts -->
+  <div class="card" data-choice="toggle-in-lobby" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0f0a1a;border-radius:8px;padding:16px;min-height:220px;">
+      <!-- Pill toggle at top -->
+      <div style="display:flex;background:rgba(255,255,255,0.08);border-radius:10px;padding:3px;margin-bottom:12px;">
+        <div style="flex:1;background:#6b6bff;border-radius:8px;padding:7px;text-align:center;font-size:12px;font-weight:800;color:#fff;">👥 Teams</div>
+        <div style="flex:1;padding:7px;text-align:center;font-size:12px;font-weight:600;color:rgba(255,255,255,0.4);">🧍 Solo</div>
+      </div>
+      <!-- Player list with pair badges visible -->
+      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;">
+        <div style="background:rgba(107,107,255,0.15);border:1px solid rgba(107,107,255,0.3);border-radius:8px;padding:8px;display:flex;align-items:center;gap:8px;">
+          <div style="width:28px;height:28px;border-radius:50%;background:#6b6bff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">AK</div>
+          <span style="font-size:12px;font-weight:700;color:#fff;flex:1;">Ankith</span>
+          <span style="font-size:10px;background:rgba(107,107,255,0.4);color:#a78bfa;border-radius:4px;padding:2px 6px;">Team 1</span>
+        </div>
+        <div style="background:rgba(107,107,255,0.15);border:1px solid rgba(107,107,255,0.3);border-radius:8px;padding:8px;display:flex;align-items:center;gap:8px;">
+          <div style="width:28px;height:28px;border-radius:50%;background:#ff6b6b;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">RV</div>
+          <span style="font-size:12px;font-weight:700;color:#fff;flex:1;">Rahul</span>
+          <span style="font-size:10px;background:rgba(107,107,255,0.4);color:#a78bfa;border-radius:4px;padding:2px 6px;">Team 1</span>
+        </div>
+        <div style="background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.2);border-radius:8px;padding:8px;display:flex;align-items:center;gap:8px;">
+          <div style="width:28px;height:28px;border-radius:50%;background:#ffd93d;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#000;">PK</div>
+          <span style="font-size:12px;font-weight:700;color:#fff;flex:1;">Priya</span>
+          <span style="font-size:10px;background:rgba(255,107,107,0.3);color:#fca5a5;border-radius:4px;padding:2px 6px;">Team 2</span>
+        </div>
+      </div>
+      <div style="background:linear-gradient(135deg,#ff6b6b,#ffd93d);border-radius:8px;padding:10px;text-align:center;font-size:12px;font-weight:800;color:#fff;">Start Game 🎴</div>
+    </div>
+    <div class="card-body">
+      <h3>Toggle Inside Lobby</h3>
+      <p>Teams/Solo toggle sits at the top of the lobby. Switch mid-setup. In Solo mode, pair badges disappear and everyone plays for themselves.</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="section" style="margin-top:24px; background: rgba(255,211,61,0.08); border: 1px solid rgba(255,211,61,0.2); border-radius: 12px; padding: 16px;">
+  <p class="label">Solo mode gameplay changes</p>
+  <ul style="margin-top: 8px; padding-left: 20px; line-height: 2;">
+    <li>No partner response mechanic (no Double Down / Shield buttons)</li>
+    <li>Round 1: everyone guesses simultaneously, but individually scored</li>
+    <li>Rounds 2–4: each person guesses for themselves, drinks are personal</li>
+    <li>Bus ride: highest drink count player rides solo (flipper = decider = same person)</li>
+    <li>Side quests still cross-player — you challenge someone else in the room</li>
+  </ul>
+</div>

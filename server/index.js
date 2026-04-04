@@ -38,6 +38,14 @@ function syncAllRaw(game) {
   io.to(game.roomCode).emit('state:sync', { gameState: state });
 }
 
+function maybeSendSideQuest(game, pair) {
+  if (pair?._pendingSideQuest) {
+    const sq = pair._pendingSideQuest;
+    pair._pendingSideQuest = null;
+    io.to(game.roomCode).emit('sidequest:offer', sq);
+  }
+}
+
 io.on('connection', (socket) => {
   const { playerName, roomCode: rejoinCode, previousId } = socket.handshake.auth;
 
@@ -130,8 +138,8 @@ io.on('connection', (socket) => {
     if (!player?.pairId) return;
     const result = game.submitR1Guess(player.pairId, socket.id, guess);
     if (result) {
-      // Both guesses in — reveal
       io.to(game.roomCode).emit('round:reveal', { pairId: player.pairId, ...result });
+      maybeSendSideQuest(game, game.pairs[player.pairId]);
     }
     syncAll(game);
   });

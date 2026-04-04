@@ -1,0 +1,121 @@
+<h2>What's the vibe for Double Down's UI?</h2>
+<p class="subtitle">Pick the direction that feels right for a late-night group drinking card game</p>
+
+<div class="cards">
+
+  <!-- Option A: Casino Night -->
+  <div class="card" data-choice="casino" onclick="toggleSelect(this)">
+    <div class="card-image" style="background: linear-gradient(135deg, #1a0a00 0%, #3d1a00 100%); padding: 20px; border-radius: 8px;">
+      <div style="display:flex; gap:8px; justify-content:center; margin-bottom:12px;">
+        <div style="width:50px;height:70px;background:#fff;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.5);">
+          <div style="font-size:18px;font-weight:900;color:#c00;">A</div>
+          <div style="font-size:22px;color:#c00;">♥</div>
+        </div>
+        <div style="width:50px;height:70px;background:#fff;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.5);">
+          <div style="font-size:18px;font-weight:900;color:#111;">K</div>
+          <div style="font-size:22px;color:#111;">♠</div>
+        </div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-family:Georgia,serif;font-size:22px;color:#c8a84b;font-weight:700;letter-spacing:2px;">DOUBLE DOWN</div>
+        <div style="font-size:11px;color:rgba(200,168,75,0.6);letter-spacing:3px;text-transform:uppercase;margin-top:4px;">Est. Tonight</div>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:6px;justify-content:center;">
+        <div style="height:2px;flex:1;background:linear-gradient(to right, transparent, #c8a84b, transparent);"></div>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:6px;">
+        <div style="flex:1;background:rgba(200,168,75,0.2);border:1px solid #c8a84b;border-radius:8px;padding:8px;text-align:center;color:#c8a84b;font-size:12px;font-weight:700;">RED</div>
+        <div style="flex:1;background:rgba(30,30,30,0.8);border:1px solid #555;border-radius:8px;padding:8px;text-align:center;color:#fff;font-size:12px;font-weight:700;">BLACK</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Casino Night</h3>
+      <p>Deep mahogany, gold accents, serif fonts. Feels like Vegas at 2am. Classy but rowdy.</p>
+    </div>
+  </div>
+
+  <!-- Option B: Neon Arcade -->
+  <div class="card" data-choice="neon" onclick="toggleSelect(this)">
+    <div class="card-image" style="background: #050510; padding: 20px; border-radius: 8px; position:relative; overflow:hidden;">
+      <div style="position:absolute;inset:0;background:radial-gradient(circle at 30% 50%, rgba(255,0,128,0.15) 0%, transparent 60%), radial-gradient(circle at 70% 50%, rgba(0,200,255,0.15) 0%, transparent 60%);"></div>
+      <div style="display:flex; gap:8px; justify-content:center; margin-bottom:12px;position:relative;">
+        <div style="width:50px;height:70px;background:#0a0a1a;border:2px solid #ff0080;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 0 15px rgba(255,0,128,0.5);">
+          <div style="font-size:18px;font-weight:900;color:#ff0080;text-shadow:0 0 10px #ff0080;">A</div>
+          <div style="font-size:22px;color:#ff0080;text-shadow:0 0 10px #ff0080;">♥</div>
+        </div>
+        <div style="width:50px;height:70px;background:#0a0a1a;border:2px solid #00c8ff;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 0 15px rgba(0,200,255,0.5);">
+          <div style="font-size:18px;font-weight:900;color:#00c8ff;text-shadow:0 0 10px #00c8ff;">K</div>
+          <div style="font-size:22px;color:#00c8ff;text-shadow:0 0 10px #00c8ff;">♠</div>
+        </div>
+      </div>
+      <div style="text-align:center;position:relative;">
+        <div style="font-size:22px;font-weight:900;letter-spacing:3px;background:linear-gradient(90deg,#ff0080,#00c8ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">DOUBLE DOWN</div>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:6px;position:relative;">
+        <div style="flex:1;background:rgba(255,0,128,0.2);border:2px solid #ff0080;border-radius:8px;padding:8px;text-align:center;color:#ff0080;font-size:12px;font-weight:800;box-shadow:0 0 8px rgba(255,0,128,0.3);">RED 🔴</div>
+        <div style="flex:1;background:rgba(0,200,255,0.1);border:2px solid #00c8ff;border-radius:8px;padding:8px;text-align:center;color:#00c8ff;font-size:12px;font-weight:800;box-shadow:0 0 8px rgba(0,200,255,0.3);">BLACK ⚫</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Neon Arcade</h3>
+      <p>Hot pink and cyan glows, pure black base. Loud, energetic, retro-futuristic. Built to hype up a crowd.</p>
+    </div>
+  </div>
+
+  <!-- Option C: Midnight Club -->
+  <div class="card" data-choice="midnight" onclick="toggleSelect(this)">
+    <div class="card-image" style="background: linear-gradient(160deg, #0a0a1a 0%, #12122a 100%); padding: 20px; border-radius: 8px;">
+      <div style="display:flex; gap:8px; justify-content:center; margin-bottom:12px;">
+        <div style="width:50px;height:70px;background:#fff;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 0 20px rgba(79,156,249,0.3);">
+          <div style="font-size:18px;font-weight:900;color:#c53030;">A</div>
+          <div style="font-size:22px;color:#c53030;">♥</div>
+        </div>
+        <div style="width:50px;height:70px;background:linear-gradient(135deg,#1a1a3a,#12122a);border:1px solid rgba(255,255,255,0.1);border-radius:6px;display:flex;align-items:center;justify-content:center;">
+          <div style="font-size:22px;">🃏</div>
+        </div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:20px;font-weight:800;color:#f0f0f0;letter-spacing:1px;">DOUBLE DOWN</div>
+        <div style="font-size:11px;color:#4f9cf9;letter-spacing:2px;text-transform:uppercase;margin-top:4px;">Round 1 · Red or Black?</div>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:6px;">
+        <div style="flex:1;background:rgba(229,62,62,0.8);border-radius:10px;padding:10px;text-align:center;color:#fff;font-size:13px;font-weight:700;">🔴 Red</div>
+        <div style="flex:1;background:rgba(26,26,26,0.9);border:1px solid #555;border-radius:10px;padding:10px;text-align:center;color:#fff;font-size:13px;font-weight:700;">⚫ Black</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Midnight Club</h3>
+      <p>The current direction, polished up. Dark navy, blue accents, glassmorphism panels. Clean and premium — like the current plan but with real motion.</p>
+    </div>
+  </div>
+
+  <!-- Option D: Chaotic Fun -->
+  <div class="card" data-choice="chaotic" onclick="toggleSelect(this)">
+    <div class="card-image" style="background: #1a0a2e; padding: 20px; border-radius: 8px; position:relative; overflow:hidden;">
+      <div style="position:absolute;top:-10px;right:-10px;font-size:60px;opacity:0.15;transform:rotate(20deg);">🃏</div>
+      <div style="position:absolute;bottom:-10px;left:-10px;font-size:50px;opacity:0.1;transform:rotate(-15deg);">🍺</div>
+      <div style="display:flex; gap:8px; justify-content:center; margin-bottom:10px;">
+        <div style="width:45px;height:63px;background:#fff;border-radius:5px;display:flex;flex-direction:column;align-items:center;justify-content:center;transform:rotate(-5deg);box-shadow:3px 3px 0 #ff6b6b;">
+          <div style="font-size:16px;font-weight:900;color:#c00;">7</div>
+          <div style="font-size:18px;color:#c00;">♦</div>
+        </div>
+        <div style="width:45px;height:63px;background:#fff;border-radius:5px;display:flex;flex-direction:column;align-items:center;justify-content:center;transform:rotate(3deg);box-shadow:3px 3px 0 #6b6bff;">
+          <div style="font-size:16px;font-weight:900;color:#111;">J</div>
+          <div style="font-size:18px;color:#111;">♣</div>
+        </div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:24px;font-weight:900;color:#fff;letter-spacing:-1px;">Double <span style="color:#ff6b6b;">Down</span> 🔥</div>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:6px;">
+        <div style="flex:1;background:#ff6b6b;border-radius:10px;padding:10px;text-align:center;color:#fff;font-size:13px;font-weight:900;transform:rotate(-1deg);">RED 🔴</div>
+        <div style="flex:1;background:#6b6bff;border-radius:10px;padding:10px;text-align:center;color:#fff;font-size:13px;font-weight:900;transform:rotate(1deg);">BLACK ⚫</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Chaotic Fun</h3>
+      <p>Slightly tilted cards, vibrant purples and corals, playful rotation. Feels alive and messy — like the game actually is.</p>
+    </div>
+  </div>
+
+</div>
