@@ -5,6 +5,8 @@ import useGameStore from '../store/gameStore';
 import PairPanel from '../components/PairPanel';
 import RoundPrompt from '../components/RoundPrompt';
 import Card from '../components/Card';
+import { sounds } from '../audio';
+import { haptics } from '../haptics';
 import {
   R1Buttons,
   R2Buttons,
@@ -16,6 +18,9 @@ import {
 function RevealOverlay({ reveal, onDismiss }) {
   useEffect(() => {
     if (!reveal) return;
+    // Sound + haptic feedback
+    if (reveal.drinks > 0) { sounds.wrong(); haptics.error(); }
+    else { sounds.correct(); haptics.success(); }
     const t = setTimeout(onDismiss, 2500);
     return () => clearTimeout(t);
   }, [reveal, onDismiss]);
@@ -160,14 +165,17 @@ export default function Game() {
   const myTurn = getMyTurn(phase, myPair, mySocketId, gameMode);
 
   const handleR1Guess = useCallback((guess) => {
+    sounds.cardFlip(); haptics.light();
     socket.emit('round:r1Guess', { guess });
   }, []);
 
   const handleGuess = useCallback((guess) => {
+    sounds.cardFlip(); haptics.light();
     socket.emit('round:guess', { guess });
   }, []);
 
   const handlePartnerResponse = useCallback((response) => {
+    sounds.cardFlip(); haptics.medium();
     socket.emit('round:partnerResponse', { response });
   }, []);
 

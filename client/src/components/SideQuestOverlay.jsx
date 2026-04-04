@@ -4,6 +4,8 @@ import socket from '../socket';
 import useGameStore from '../store/gameStore';
 import SideQuestTimer from './SideQuestTimer';
 import { SIDE_QUESTS } from '../data/sidequests';
+import { sounds } from '../audio';
+import { haptics } from '../haptics';
 
 // ─── QuestReveal ─────────────────────────────────────────────────────────────
 function QuestReveal({ quest, isMyQuest, players, onAccept, onDecline }) {
@@ -278,7 +280,12 @@ function RapidFireQuest({ quest, isMyQuest, isHost, onHostResult }) {
 
 // ─── QuestResult ──────────────────────────────────────────────────────────────
 function QuestResult({ won, drinksAtStake, onDismiss }) {
-  useEffect(() => { const t = setTimeout(onDismiss, 3000); return () => clearTimeout(t); }, []);
+  useEffect(() => {
+    if (won) { sounds.questWin(); haptics.success(); }
+    else { sounds.questFail(); haptics.error(); }
+    const t = setTimeout(onDismiss, 3000);
+    return () => clearTimeout(t);
+  }, []);
   return (
     <motion.div
       initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }}
@@ -320,6 +327,7 @@ export default function SideQuestOverlay() {
   useEffect(() => { setPhase('reveal'); setResult(null); }, [questKey]);
 
   const handleAccept = useCallback(() => {
+    sounds.sideQuest(); haptics.sideQuest();
     socket.emit('sidequest:accept');
     setPhase('active');
   }, []);

@@ -5,6 +5,8 @@ import Game from './screens/Game';
 import BusRide from './screens/BusRide';
 import SideQuestOverlay from './components/SideQuestOverlay';
 import socket from './socket';
+import { unlockAudio } from './audio';
+import { useEffect } from 'react';
 
 const GAME_PHASES = ['ROUND_1', 'ROUND_2', 'ROUND_3', 'ROUND_4'];
 
@@ -91,6 +93,12 @@ export default function App() {
   useSocket();
   const gameState = useGameStore(s => s.gameState);
   const phase = gameState?.phase || 'LOBBY';
+
+  useEffect(() => {
+    const unlock = () => { unlockAudio(); window.removeEventListener('touchstart', unlock); };
+    window.addEventListener('touchstart', unlock, { once: true });
+    return () => window.removeEventListener('touchstart', unlock);
+  }, []);
 
   return (
     <>
