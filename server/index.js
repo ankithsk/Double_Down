@@ -15,7 +15,10 @@ if (process.env.NODE_ENV === 'production') {
   app.get('*', (req, res) => res.sendFile(path.join(clientDist, 'index.html')));
 }
 const io = new Server(httpServer, {
-  cors: { origin: '*' },
+  cors: {
+    origin: process.env.CLIENT_ORIGIN || '*',
+    methods: ['GET', 'POST'],
+  },
 });
 
 // roomCode -> GameManager
