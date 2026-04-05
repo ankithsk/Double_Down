@@ -15,11 +15,22 @@ export default function useSocket() {
     clearSideQuest,
     addSideQuestVote,
     setSideQuestPhase,
+    pushQuestHistory,
   } = useGameStore();
 
   useEffect(() => {
     socket.on('connect', () => {
       setMySocketId(socket.id);
+    });
+
+    socket.on('session:expired', () => {
+      sessionStorage.removeItem('dd_room');
+      sessionStorage.removeItem('dd_pid');
+      setError('Your session expired. Start a new game.');
+    });
+
+    socket.on('host:transferred', () => {
+      // mySocketId in store is already correct; state:sync will update isHost flag
     });
 
     socket.on('room:created', ({ roomCode, playerId }) => {
@@ -68,9 +79,14 @@ export default function useSocket() {
       clearSideQuest();
     });
 
-    socket.on('sidequest:resolved', ({ won, drinksAtStake }) => {
+    socket.on('sidequest:resolved', ({ won, drinksAtStake, pairId }) => {
       useGameStore.getState().resolveSideQuest(won, drinksAtStake);
-      // Auto-close after 3s so everyone sees the result
+      // Build quest history entry
+      const { activeSideQuest, gameState } = useGameStore.getState();
+      const type = activeSideQuest?.type || 'quest';
+      const pairPlayers = gameState?.pairs?.[pairId]?.playerIds || [];
+      const names = pairPlayers.map(id => gameState?.players?.[id]?.name || '?').join(' & ');
+      pushQuestHistory({ type, won, names });
       setTimeout(() => clearSideQuest(), 3200);
     });
 
@@ -84,6 +100,8 @@ export default function useSocket() {
 
     return () => {
       socket.off('connect');
+      socket.off('session:expired');
+      socket.off('host:transferred');
       socket.off('room:created');
       socket.off('room:joined');
       socket.off('room:error');

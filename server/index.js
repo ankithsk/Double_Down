@@ -61,7 +61,11 @@ io.on('connection', (socket) => {
   const { playerName, roomCode: rejoinCode, previousId } = socket.handshake.auth;
 
   // Attempt reconnect
-  if (rejoinCode && previousId && rooms.has(rejoinCode)) {
+  if (rejoinCode && previousId) {
+    if (!rooms.has(rejoinCode)) {
+      socket.emit('session:expired');
+      return;
+    }
     const game = rooms.get(rejoinCode);
     const reconnected = game.reconnectPlayer(previousId, socket.id);
     if (reconnected) {
@@ -71,6 +75,8 @@ io.on('connection', (socket) => {
       syncAll(game);
       return;
     }
+    socket.emit('session:expired');
+    return;
   }
 
   // ─── room:create ──────────────────────────────────────────────────────────
@@ -322,12 +328,21 @@ io.on('connection', (socket) => {
     if (!meta) return;
     const game = rooms.get(meta.roomCode);
     if (!game) return;
+    const wasHost = game.players[socket.id]?.isHost;
+    const leavingName = game.players[socket.id]?.name || 'Someone';
     game.removePlayer(socket.id);
     socketMeta.delete(socket.id);
-    io.to(meta.roomCode).emit('player:disconnected', {
-      playerId: socket.id,
-      name: game.players[socket.id]?.name || 'Someone',
-    });
+
+    // Transfer host to next connected player
+    if (wasHost) {
+      const next = Object.values(game.players).find(p => p.connected && p.id !== socket.id);
+      if (next) {
+        next.isHost = true;
+        io.to(next.id).emit('host:transferred', { name: next.name });
+      }
+    }
+
+    io.to(meta.roomCode).emit('player:disconnected', { playerId: socket.id, name: leavingName });
     syncAll(game);
   });
 });

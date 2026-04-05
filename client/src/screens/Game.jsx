@@ -1,11 +1,12 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import socket from '../socket';
 import useGameStore from '../store/gameStore';
 import PairPanel from '../components/PairPanel';
 import RoundPrompt from '../components/RoundPrompt';
+import RoundTransition from '../components/RoundTransition';
 import Card from '../components/Card';
-import { sounds } from '../audio';
+import { sounds, toggleMute, isMuted } from '../audio';
 import { haptics } from '../haptics';
 import {
   R1Buttons,
@@ -14,6 +15,8 @@ import {
   R4Buttons,
   PartnerResponseButtons,
 } from '../components/ActionButtons';
+
+const QUEST_ICONS = { charades: '🎬', rapidfire: '⚡', dare: '😈', mimicry: '🎭', trivia: '🧠' };
 
 function RevealOverlay({ reveal, onDismiss, myPairId, pairs, players }) {
   useEffect(() => {
@@ -165,9 +168,13 @@ export default function Game() {
   const lastReveal = useGameStore(s => s.lastReveal);
   const setLastReveal = useGameStore(s => s.setLastReveal);
   const gameMode = useGameStore(s => s.gameMode);
+  const questHistory = useGameStore(s => s.questHistory);
 
   const [showReveal, setShowReveal] = useState(null);
   const [nextRoundThrottle, setNextRoundThrottle] = useState(false);
+  const [showTransition, setShowTransition] = useState(false);
+  const [muted, setMuted] = useState(isMuted);
+  const prevPhaseRef = useRef(null);
 
   const phase = gameState?.phase || 'ROUND_1';
   const players = gameState?.players || {};
@@ -180,8 +187,19 @@ export default function Game() {
     if (lastReveal) {
       setShowReveal(lastReveal);
       setLastReveal(null);
+      // Play streak sound when on a roll
+      if (lastReveal.streak >= 2) setTimeout(() => sounds.streak(), 400);
     }
   }, [lastReveal, setLastReveal]);
+
+  // Round transition overlay
+  useEffect(() => {
+    if (prevPhaseRef.current && prevPhaseRef.current !== phase) {
+      sounds.roundStart();
+      setShowTransition(true);
+    }
+    prevPhaseRef.current = phase;
+  }, [phase]);
 
   const dismissReveal = useCallback(() => setShowReveal(null), []);
 
@@ -238,16 +256,27 @@ export default function Game() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}>
-      {/* Solo mode badge */}
-      {gameMode === 'solo_individual' && (
-        <div style={{ textAlign: 'center', padding: '8px 16px 0' }}>
-          <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--accent-gold)', background: 'rgba(255,217,61,0.1)', border: '1px solid rgba(255,217,61,0.3)', borderRadius: 6, padding: '3px 10px' }}>
-            Every Man for Himself
-          </span>
+
+      {/* Top bar: mode badge + mute */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px 0' }}>
+        <div>
+          {gameMode === 'solo_individual' && (
+            <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--accent-gold)', background: 'rgba(255,217,61,0.1)', border: '1px solid rgba(255,217,61,0.3)', borderRadius: 6, padding: '3px 10px' }}>
+              Every Man for Himself
+            </span>
+          )}
         </div>
-      )}
+        <button
+          onClick={() => { const next = toggleMute(); setMuted(next); }}
+          style={{ background: 'none', border: 'none', fontSize: 20, minHeight: 'auto', padding: '4px 8px', opacity: 0.6 }}
+          title={muted ? 'Unmute' : 'Mute'}
+        >
+          {muted ? '🔇' : '🔊'}
+        </button>
+      </div>
+
       {/* Pair panels — scrollable top section */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 0' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '8px 16px 0' }}>
         {sortedPairs.map(pair => (
           <PairPanel
             key={pair.id}
@@ -259,6 +288,23 @@ export default function Game() {
           />
         ))}
       </div>
+
+      {/* Quest history chips */}
+      {questHistory.length > 0 && (
+        <div style={{ overflowX: 'auto', display: 'flex', gap: 6, padding: '4px 16px', scrollbarWidth: 'none' }}>
+          {questHistory.map((q, i) => (
+            <span key={i} style={{
+              flexShrink: 0, fontSize: 11, fontWeight: 700,
+              background: q.won ? 'rgba(107,255,184,0.12)' : 'rgba(255,107,107,0.12)',
+              border: `1px solid ${q.won ? 'rgba(107,255,184,0.3)' : 'rgba(255,107,107,0.3)'}`,
+              color: q.won ? 'var(--accent-green)' : 'var(--accent-hot)',
+              borderRadius: 20, padding: '3px 10px', whiteSpace: 'nowrap',
+            }}>
+              {QUEST_ICONS[q.type]} {q.names} {q.won ? 'won' : 'lost'}
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* Round prompt */}
       <RoundPrompt phase={phase} />
@@ -354,6 +400,13 @@ export default function Game() {
           </div>
         )}
       </div>
+
+      {/* Round transition */}
+      <AnimatePresence>
+        {showTransition && (
+          <RoundTransition phase={phase} onDone={() => setShowTransition(false)} />
+        )}
+      </AnimatePresence>
 
       {/* Reveal overlay */}
       <AnimatePresence>

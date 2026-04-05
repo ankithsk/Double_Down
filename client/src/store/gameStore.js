@@ -38,8 +38,12 @@ const useGameStore = create((set, get) => ({
   setSideQuestPhase: (phase) => set({ sideQuestPhase: phase }),
   resolveSideQuest: (won, drinksAtStake) => set({ sideQuestPhase: 'result', sideQuestResult: { won, drinksAtStake } }),
   sideQuestResult: null,
+  questHistory: [],   // [{ type, won, names }] last 6
   addSideQuestVote: (playerId, vote) => set(s => ({
     sideQuestVotes: { ...s.sideQuestVotes, [playerId]: vote },
+  })),
+  pushQuestHistory: (entry) => set(s => ({
+    questHistory: [entry, ...s.questHistory].slice(0, 6),
   })),
 }));
 

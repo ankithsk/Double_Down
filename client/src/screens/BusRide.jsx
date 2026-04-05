@@ -1,13 +1,32 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import socket from '../socket';
 import useGameStore from '../store/gameStore';
 import Card from '../components/Card';
+import { sounds } from '../audio';
+import { haptics } from '../haptics';
+
+const FACE_CARDS = ['J', 'Q', 'K', 'A'];
 
 export default function BusRide() {
   const gameState = useGameStore(s => s.gameState);
   const mySocketId = useGameStore(s => s.mySocketId);
   const busFinalResult = useGameStore(s => s.busFinalResult);
+  const lastBusCard = useGameStore(s => s.lastBusCard);
+  const [shaking, setShaking] = useState(false);
+
+  useEffect(() => {
+    if (!lastBusCard?.card) return;
+    if (FACE_CARDS.includes(lastBusCard.card.value)) {
+      sounds.faceCard();
+      haptics.error();
+      setShaking(true);
+      setTimeout(() => setShaking(false), 500);
+    } else {
+      sounds.cardFlip();
+      haptics.light();
+    }
+  }, [lastBusCard]);
 
   const pairs = gameState?.pairs || {};
   const players = gameState?.players || {};
@@ -40,14 +59,17 @@ export default function BusRide() {
   const finished = busState.finished || busFinalResult;
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'var(--bg-deep)',
-      display: 'flex',
-      flexDirection: 'column',
-      padding: '24px 16px',
-      paddingBottom: 'max(24px, env(safe-area-inset-bottom))',
-    }}>
+    <motion.div
+      animate={shaking ? { x: [-6, 6, -5, 5, -3, 3, 0] } : { x: 0 }}
+      transition={{ duration: 0.45 }}
+      style={{
+        minHeight: '100vh',
+        background: 'var(--bg-deep)',
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '24px 16px',
+        paddingBottom: 'max(24px, env(safe-area-inset-bottom))',
+      }}>
       {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: 20 }}>
         <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--accent-hot)', marginBottom: 4 }}>
@@ -165,6 +187,6 @@ export default function BusRide() {
           </button>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }

@@ -4,8 +4,9 @@ import Lobby from './screens/Lobby';
 import Game from './screens/Game';
 import BusRide from './screens/BusRide';
 import SideQuestOverlay from './components/SideQuestOverlay';
+import Confetti from './components/Confetti';
 import socket from './socket';
-import { unlockAudio } from './audio';
+import { unlockAudio, sounds } from './audio';
 import { useEffect } from 'react';
 
 const GAME_PHASES = ['ROUND_1', 'ROUND_2', 'ROUND_3', 'ROUND_4'];
@@ -15,6 +16,8 @@ function GameOver() {
   const pairs = Object.values(gameState?.pairs || {});
   const players = gameState?.players || {};
   const sorted = [...pairs].sort((a, b) => a.drinkCount - b.drinkCount);
+
+  useEffect(() => { sounds.gameOver(); }, []);
 
   function handlePlayAgain() {
     socket.emit('game:restart');
@@ -31,6 +34,7 @@ function GameOver() {
       padding: '24px 16px',
       textAlign: 'center',
     }}>
+      <Confetti count={90} />
       <div style={{ fontSize: 48, marginBottom: 8 }}>🏁</div>
       <h1 style={{ fontSize: 32, fontWeight: 900, marginBottom: 4, color: 'var(--text-primary)' }}>Game Over</h1>
       <p style={{ color: 'var(--text-muted)', marginBottom: 32 }}>Final drink counts</p>

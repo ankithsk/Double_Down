@@ -114,6 +114,7 @@ class GameManager {
       onBus: false,
       busState: null,
       hasDisconnect: false,
+      correctStreak: 0,
     };
   }
 
@@ -257,8 +258,12 @@ class GameManager {
     rs.resolved = true;
     rs.correct = correct;
 
+    const bothCorrect = rs.guessA === correct && rs.guessB === correct;
+    if (bothCorrect) pair.correctStreak += 1;
+    else pair.correctStreak = 0;
+
     pair._pendingSideQuest = this._maybeTriggerSideQuest(pair);
-    return { card, drinks, disagreed: rs.guessA !== rs.guessB, correct };
+    return { card, drinks, disagreed: rs.guessA !== rs.guessB, correct, streak: pair.correctStreak };
   }
 
   // ─── Round 2+: Higher/Lower, Inside/Outside, Suit ─────────────────────────
@@ -318,8 +323,11 @@ class GameManager {
     rs.resolved = true;
     rs.hit = hit;
 
+    if (hit) pair.correctStreak += 1;
+    else pair.correctStreak = 0;
+
     pair._pendingSideQuest = this._maybeTriggerSideQuest(pair);
-    return { card, drinks: totalDrinks, hit, shieldPenalty };
+    return { card, drinks: totalDrinks, hit, shieldPenalty, streak: pair.correctStreak };
   }
 
   _evaluateGuess(guess, hand, round) {
