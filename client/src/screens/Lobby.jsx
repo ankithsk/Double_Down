@@ -53,7 +53,10 @@ export default function Lobby() {
   const me = players[mySocketId];
   const isHost = me?.isHost;
   const playerList = Object.values(players).filter(p => p.connected);
-  const allPaired = playerList.length >= 2 && playerList.every(p => p.pairId);
+  // Once in a room, use the server's game mode as truth
+  const effectiveGameMode = gameState?.gameMode || gameMode;
+  const isSolo = effectiveGameMode === 'solo_individual';
+  const allPaired = playerList.length >= 2 && (isSolo || playerList.every(p => p.pairId));
 
   useEffect(() => {
     const storedRoom = sessionStorage.getItem('dd_room');
@@ -90,13 +93,13 @@ export default function Lobby() {
   const handleStart = useCallback(() => { socket.emit('game:start', { gameMode }); }, [gameMode]);
 
   const handlePlayerTap = useCallback((playerId) => {
-    if (!isHost) return;
+    if (!isHost || isSolo) return;
     if (!selectingPair) { setSelectingPair(playerId); }
     else {
       if (selectingPair !== playerId) socket.emit('pair:assign', { playerIdA: selectingPair, playerIdB: playerId });
       setSelectingPair(null);
     }
-  }, [isHost, selectingPair]);
+  }, [isHost, isSolo, selectingPair]);
 
   const joinUrl = roomCode ? `${window.location.origin}?join=${roomCode}` : '';
 
@@ -276,7 +279,8 @@ export default function Lobby() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>
             {playerList.length} player{playerList.length !== 1 ? 's' : ''} in room
-            {isHost && ' — tap two players to pair them'}
+            {isHost && !isSolo && ' — tap two players to pair them'}
+            {isSolo && <span style={{ marginLeft: 6, color: 'var(--accent-gold)', fontWeight: 700 }}>Every Man for Himself</span>}
           </p>
           <button onClick={() => setShowHowToPlay(true)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 13, minHeight: 'auto', padding: '4px 8px', textDecoration: 'underline' }}>
             Rules
@@ -298,14 +302,14 @@ export default function Lobby() {
               <span style={{ fontWeight: 700, fontSize: 16, flex: 1 }}>{p.name}</span>
               {p.id === mySocketId && <span style={{ fontSize: 11, background: 'var(--accent-primary)', color: '#fff', borderRadius: 6, padding: '2px 8px', fontWeight: 700 }}>You</span>}
               {p.isHost && <span style={{ fontSize: 12, color: 'var(--accent-gold)', fontWeight: 700 }}>Host</span>}
-              {pairName && <span style={{ fontSize: 11, color: 'var(--accent-green)', background: 'rgba(107,255,184,0.1)', border: '1px solid rgba(107,255,184,0.3)', borderRadius: 6, padding: '2px 8px', fontWeight: 700 }}>{pairName}</span>}
+              {!isSolo && pairName && <span style={{ fontSize: 11, color: 'var(--accent-green)', background: 'rgba(107,255,184,0.1)', border: '1px solid rgba(107,255,184,0.3)', borderRadius: 6, padding: '2px 8px', fontWeight: 700 }}>{pairName}</span>}
             </div>
           );
         })}
       </div>
 
-      {/* Host controls */}
-      {isHost && (
+      {/* Host controls — pairing only in teams mode */}
+      {isHost && !isSolo && (
         <div style={{ marginBottom: 16 }}>
           <button onClick={handleAutoPair} disabled={playerList.length < 2} style={{ width: '100%', background: 'transparent', border: '2px solid var(--border)', borderRadius: 14, padding: '12px', color: 'var(--text-primary)', fontSize: 15, fontWeight: 700, opacity: playerList.length < 2 ? 0.4 : 1 }}>
             Auto-Pair Players
@@ -336,7 +340,7 @@ export default function Lobby() {
               transition: 'all 0.15s',
             }}
           >
-            {allPaired ? 'Start Game →' : playerList.length < 2 ? 'Waiting for players…' : 'Pair all players first'}
+            {allPaired ? 'Start Game →' : playerList.length < 2 ? 'Waiting for players…' : isSolo ? 'Start Game →' : 'Pair all players first'}
           </button>
         </div>
       )}
